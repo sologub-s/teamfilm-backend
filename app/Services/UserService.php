@@ -36,25 +36,16 @@ class UserService extends AbstractService
             'positions' => 'filteredarray:'.implode(',', User::$_positions),
             'about' => 'string|nullable',
             'awards' => 'string|nullable',
+            'portfolio' => 'string|nullable',
             'hasNoForeignPassport' => 'boolean|nullable',
             'weight' => 'int|max:250|nullable',
             'growth' => 'int|max:300|nullable',
             'eyes' => 'filteredarray:'.implode(',', User::$_eyes),
+            'vocal' => 'filteredarray:'.implode(',', User::$_vocal),
+            'dance' => 'filteredarray:'.implode(',', User::$_dance),
         ]);
         return $validator->fails() ? $validator->errors()->all() : true;
     }
-
-    /*
-* @property string     $company
-* @property string     $positions
-* @property string     $about
-* @property string     $awards
-* @property boolean    $hasForeignPassport
-* @property int        $weight
-* @property int        $growth
-* @property array      $eyes
-     *
-     */
 
     /**
      * @param User $user

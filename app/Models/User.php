@@ -29,10 +29,13 @@ namespace App\Models;
  * @property array      $positions
  * @property string     $about
  * @property string     $awards
+ * @property string     $portfolio
  * @property boolean    $hasForeignPassport
  * @property int        $weight
  * @property int        $growth
  * @property array      $eyes
+ * @property array      $vocal
+ * @property array      $dance
  *
  * @method static User[]    fetchAll($cond = null, $sort = null, int $count = null, int $offset = null)
  * @method static User|null fetchOne($cond = null, $sort = null)
@@ -44,8 +47,12 @@ namespace App\Models;
 class User extends AbstractModel
 {
 
-    public static $_positions = ['ceo','hr','artist','singer','dancer'];
+    public static $_positions = ['ceo','hr','artist','singer','dancer',];
 
-    public static $_eyes = ['red','green','blue','brown','grey'];
+    public static $_eyes = ['red','green','blue','brown','grey',];
+
+    public static $_vocal = ['alt','soprano','bass',];
+
+    public static $_dance = ['hip-hop','strip','balley','disco','rumba','chachacha'];
 
 }

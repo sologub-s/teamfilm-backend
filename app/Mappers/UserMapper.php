@@ -36,10 +36,13 @@ class UserMapper extends \MongoStar\Map
             'positions' => 'positions',
             'about' => 'about',
             'awards' => 'awards',
+            'portfolio' => 'portfolio',
             'hasForeignPassport' => 'hasForeignPassport',
             'weight' => 'weight',
             'growth' => 'growth',
             'eyes' => 'eyes',
+            'vocal' => 'vocal',
+            'dance' => 'dance',
         ];
     }
 
@@ -66,10 +69,13 @@ class UserMapper extends \MongoStar\Map
             'positions' => 'positions',
             'about' => 'about',
             'awards' => 'awards',
+            'portfolio' => 'portfolio',
             'hasForeignPassport' => 'hasForeignPassport',
             'weight' => 'weight',
             'growth' => 'growth',
             'eyes' => 'eyes',
+            'vocal' => 'vocal',
+            'dance' => 'dance',
         ];
     }
 
