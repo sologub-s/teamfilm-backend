@@ -86,4 +86,12 @@ class UserMapper extends \MongoStar\Map
     public function getEyes ($user) {
         return is_array($user->eyes) ? $user->eyes : [];
     }
+
+    public function getVocal ($user) {
+        return is_array($user->vocal) ? $user->vocal : [];
+    }
+
+    public function getDance ($user) {
+        return is_array($user->dance) ? $user->dance : [];
+    }
 }
