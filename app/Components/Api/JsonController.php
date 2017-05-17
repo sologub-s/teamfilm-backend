@@ -29,6 +29,12 @@ abstract class JsonController extends BaseController
         return $this->em->getManager();
     }
 
+    /**
+     * @param array $data
+     * @param Int $code
+     * @param null $message
+     * @return Response
+     */
     protected function response (Array $data = [], Int $code = Response::HTTP_OK, $message = null) {
         return response()->json($data)->setStatusCode($code, $message || Response::$statusTexts[$code]);
     }

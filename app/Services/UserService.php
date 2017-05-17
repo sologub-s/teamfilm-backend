@@ -62,6 +62,17 @@ class UserService extends AbstractService
     }
 
     /**
+     * @param String|null $id
+     * @return User|null
+     */
+    public static function get (String $id = null) {
+        if (!$user = User::fetchOne(['id' => $id])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
+        }
+        return User::fetchOne(['id' => $id]);
+    }
+
+    /**
      * @param User $user
      * @return User
      */
@@ -74,20 +85,20 @@ class UserService extends AbstractService
         $user->password = password_hash($user->password, PASSWORD_BCRYPT);
 
         if (TRUE !== self::isValid($user)) {
-            throw new \App\Exceptions\User\InvalidEntityException(implode('; ', self::isValid($user)));
+            throw new \App\Exceptions\InvalidEntityException('User data validation errors: '.implode('; ', self::isValid($user)));
         }
 
         if(!self::isEmailAllowed($user->email, $user->id)) {
-            throw new \App\Exceptions\User\EmailAlreadyExistsException();
+            throw new \App\Exceptions\User\EmailAlreadyExistsException;
         }
         if(!self::isNicknameAllowed($user->nickname, $user->id)) {
-            throw new \App\Exceptions\User\NicknameAlreadyExistsException();
+            throw new \App\Exceptions\User\NicknameAlreadyExistsException;
         }
 
         try {
             $user->save();
         } catch (\Exception $e) {
-            throw new \App\Exceptions\CannotSaveEntityException();
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
         }
 
         self::sendRegistrationEmail($user->id);
@@ -101,13 +112,13 @@ class UserService extends AbstractService
      * @return User
      * @throws \App\Exceptions\CannotSaveEntityException
      * @throws \App\Exceptions\EntityNotFoundException
-     * @throws \App\Exceptions\User\InvalidEntityException
+     * @throws \App\Exceptions\InvalidEntityException
      * @throws \App\Exceptions\User\NicknameAlreadyExistsException
      */
     public static function update(String $id, Array $data = []) : User
     {
-        if (!$user = self::getUserById($id)) {
-            throw new \App\Exceptions\EntityNotFoundException;
+        if (!$user = User::fetchOne(['id' => $id])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
         }
 
         $user->updated_at = time();
@@ -119,18 +130,22 @@ class UserService extends AbstractService
         }
         $user->populate($data);
 
-        if (!self::isValid($user)) {
-            throw new \App\Exceptions\User\InvalidEntityException();
+        if (TRUE !== self::isValid($user)) {
+            throw new \App\Exceptions\InvalidEntityException('User data is not valid');
+        }
+
+        if ($user->avatar && TRUE !== self::isValidAvatar($user->avatar)) {
+            throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
         if(!self::isNicknameAllowed($user->nickname, $user->id)) {
-            throw new \App\Exceptions\User\NicknameAlreadyExistsException();
+            throw new \App\Exceptions\User\NicknameAlreadyExistsException;
         }
 
         try {
             $user->save();
         } catch (\Exception $e) {
-            throw new \App\Exceptions\CannotSaveEntityException();
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
         }
 
         return $user;
@@ -141,20 +156,20 @@ class UserService extends AbstractService
      * @return void
      * @throws \App\Exceptions\CannotSaveEntityException
      * @throws \App\Exceptions\EntityNotFoundException
-     * @throws \App\Exceptions\User\InvalidEntityException
+     * @throws \App\Exceptions\InvalidEntityException
      * @throws \App\Exceptions\User\NicknameAlreadyExistsException
      */
     public static function delete(String $id) : void
     {
 
-        if (!$user = self::getUserById($id)) {
-            throw new \App\Exceptions\EntityNotFoundException;
+        if (!$user = User::fetchOne(['id' => $id])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
         }
 
         try {
             $user->remove();
         } catch (\Exception $e) {
-            throw new \App\Exceptions\CannotRemoveEntityException;
+            throw new \App\Exceptions\CannotRemoveEntityException('User cannot be deleted');
         }
     }
 
@@ -164,19 +179,19 @@ class UserService extends AbstractService
      */
     public static function setAvatar(String $id) : array {
         $avatar = resolve('\Storage\Storage')->upload('avatar', \Storage\Storage::FILES)[0]->asArray();
-        if (!self::isValidAvatar($avatar)) {
-            throw new \App\Exceptions\User\InvalidEntityException();
+        if (TRUE !== self::isValidAvatar($avatar)) {
+            throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
-        if (!$user = self::getUserById($id)) {
-            throw new \App\Exceptions\EntityNotFoundException;
+        if (!$user = User::fetchOne(['id' => $id])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
         }
 
         $user->avatar = $avatar;
         try {
             $user->save();
         } catch (\Exception $e) {
-            throw new \App\Exceptions\CannotSaveEntityException();
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
         }
 
         return $avatar;
@@ -191,8 +206,8 @@ class UserService extends AbstractService
      */
     public static function deleteAvatar(String $id) : bool {
 
-        if (!$user = self::getUserById($id)) {
-            throw new \App\Exceptions\EntityNotFoundException;
+        if (!$user = User::fetchOne(['id' => $id])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
         }
 
         if (!$user->avatar) {
@@ -200,28 +215,19 @@ class UserService extends AbstractService
         }
 
         if (!self::isValidAvatar($user->avatar)) {
-            throw new \App\Exceptions\User\InvalidEntityException();
+            throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
         try {
             resolve('\Storage\Storage')->delete($user->avatar['identity']);
             $user->avatar = null;
             $user->save();
-            return true;
         } catch (\Exception $e) {
-            throw new \App\Exceptions\CannotRemoveEntityException;
+            throw new \App\Exceptions\CannotRemoveEntityException('Avatar cannot be deleted or user cannot be updated');
         }
 
-        return false;
+        return true;
 
-    }
-
-    /**
-     * @param String|null $id
-     * @return User|null
-     */
-    public static function getUserById (String $id = null) {
-        return User::fetchOne(['id' => $id]);
     }
 
     /**
