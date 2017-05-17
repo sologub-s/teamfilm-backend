@@ -47,12 +47,27 @@ class UserService extends AbstractService
         return $validator->fails() ? $validator->errors()->all() : true;
     }
 
+    public static function isValidAvatar(Array $avatar = null)
+    {
+        if (!is_array($avatar)) {
+            return false;
+        }
+        $validator = Validator::make($avatar, [
+            'identity' => 'string|size:32|required',
+            'type' => 'string|nullable',
+            'size' => 'int|required',
+            'url' => 'string|required',
+        ]);
+        return $validator->fails() ? $validator->errors()->all() : true;
+    }
+
     /**
      * @param User $user
      * @return User
      */
     public static function register(User $user) : User
     {
+
         $user->created_at = $user->updated_at = time();
         $user->is_active = false;
         $user->activation_token = uniqid();
@@ -97,7 +112,7 @@ class UserService extends AbstractService
 
         $user->updated_at = time();
         $data['password'] = isset($data['password']) ? password_hash($data['password'], PASSWORD_BCRYPT) : $user->password;
-        foreach (['_id','id','email','created_at','updated_at','activated_at','activation_token'] as $k) {
+        foreach (['_id','id','email','created_at','updated_at','activated_at','activation_token','is_active'] as $k) {
             if (isset($data[$k])) {
                 unset($data[$k]);
             }
@@ -117,8 +132,6 @@ class UserService extends AbstractService
         } catch (\Exception $e) {
             throw new \App\Exceptions\CannotSaveEntityException();
         }
-
-        self::sendRegistrationEmail($user->id);
 
         return $user;
     }
@@ -143,6 +156,64 @@ class UserService extends AbstractService
         } catch (\Exception $e) {
             throw new \App\Exceptions\CannotRemoveEntityException;
         }
+    }
+
+    /**
+     * @param String $id User id
+     * @return array
+     */
+    public static function setAvatar(String $id) : array {
+        $avatar = resolve('\Storage\Storage')->upload('avatar', \Storage\Storage::FILES)[0]->asArray();
+        if (!self::isValidAvatar($avatar)) {
+            throw new \App\Exceptions\User\InvalidEntityException();
+        }
+
+        if (!$user = self::getUserById($id)) {
+            throw new \App\Exceptions\EntityNotFoundException;
+        }
+
+        $user->avatar = $avatar;
+        try {
+            $user->save();
+        } catch (\Exception $e) {
+            throw new \App\Exceptions\CannotSaveEntityException();
+        }
+
+        return $avatar;
+    }
+
+    /**
+     * @param String $id
+     * @return bool
+     * @throws \App\Exceptions\CannotRemoveEntityException
+     * @throws \App\Exceptions\EntityNotFoundException
+     * @throws \App\Exceptions\User\InvalidEntityException
+     */
+    public static function deleteAvatar(String $id) : bool {
+
+        if (!$user = self::getUserById($id)) {
+            throw new \App\Exceptions\EntityNotFoundException;
+        }
+
+        if (!$user->avatar) {
+            return true;
+        }
+
+        if (!self::isValidAvatar($user->avatar)) {
+            throw new \App\Exceptions\User\InvalidEntityException();
+        }
+
+        try {
+            resolve('\Storage\Storage')->delete($user->avatar['identity']);
+            $user->avatar = null;
+            $user->save();
+            return true;
+        } catch (\Exception $e) {
+            throw new \App\Exceptions\CannotRemoveEntityException;
+        }
+
+        return false;
+
     }
 
     /**

@@ -33,6 +33,17 @@ return [
 
     'connections' => [
 
+        'mongodb_mongostar' => [
+            'driver'   => env('MONGODB_DRIVER', 'mongodb'),
+            'servers'  => [
+                [
+                    'host' => env('MONGODBDB_SERVER', 'localhost'),
+                    'port' => env('MONGODBDB_PORT', '27017'),
+                ]
+            ],
+            'database' => env('MONGODB_DATABASE', 'teamfilm'),
+        ],
+
         'mongodb' => [
             'driver'   => 'mongodb',
             'host'     => env('DB_HOST', 'localhost'),

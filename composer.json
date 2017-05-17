@@ -15,7 +15,8 @@
         "moloquent/moloquent": "^0.4.0",
         "mongostar/php7": "master-dev",
         "predis/predis": "^1.1",
-        "propaganistas/laravel-phone": "^2.8"
+        "propaganistas/laravel-phone": "^2.8",
+        "storage/client": "master-dev"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
@@ -25,6 +26,10 @@
     "repositories": [
         {
             "url": "https://github.com/execrot/mongostar7.git",
+            "type": "git"
+        },
+        {
+            "url": "https://github.com/execrot/storage-client.git",
             "type": "git"
         }
     ],

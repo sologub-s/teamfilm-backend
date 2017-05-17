@@ -35,4 +35,9 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    'storage' => [
+        'url' => env('STORAGE_URL', 'localhost'),
+        'token' => env('STORAGE_TOKEN', '123'),
+    ]
+
 ];

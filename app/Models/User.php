@@ -36,6 +36,7 @@ namespace App\Models;
  * @property array      $eyes
  * @property array      $vocal
  * @property array      $dance
+ * @property array      $avatar
  *
  * @method static User[]    fetchAll($cond = null, $sort = null, int $count = null, int $offset = null)
  * @method static User|null fetchOne($cond = null, $sort = null)

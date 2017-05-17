@@ -4,10 +4,14 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-class MongostarServiceProvider extends ServiceProvider{
+class StorageServiceProvider extends ServiceProvider{
 
     public function boot()
     {
+
+        \Storage\Storage::setConfig(['uri' => config('services.storage.url'),]);
+        \Storage\Storage::setToken(config('services.storage.token'));
+
         \MongoStar\Config::setConfig([
             'driver' => config('database.connections.mongodb_mongostar.driver'),
             'servers' => [

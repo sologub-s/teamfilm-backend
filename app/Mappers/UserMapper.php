@@ -43,6 +43,7 @@ class UserMapper extends \MongoStar\Map
             'eyes' => 'eyes',
             'vocal' => 'vocal',
             'dance' => 'dance',
+            'avatar' => 'avatar',
         ];
     }
 
@@ -76,22 +77,23 @@ class UserMapper extends \MongoStar\Map
             'eyes' => 'eyes',
             'vocal' => 'vocal',
             'dance' => 'dance',
+            'avatar' => 'avatar',
         ];
     }
 
-    public function getPositions ($user) {
+    public function getPositions ($user) : array {
         return is_array($user->positions) ? $user->positions : [];
     }
 
-    public function getEyes ($user) {
+    public function getEyes ($user) : array {
         return is_array($user->eyes) ? $user->eyes : [];
     }
 
-    public function getVocal ($user) {
+    public function getVocal ($user) : array {
         return is_array($user->vocal) ? $user->vocal : [];
     }
 
-    public function getDance ($user) {
+    public function getDance ($user) : array {
         return is_array($user->dance) ? $user->dance : [];
     }
 }

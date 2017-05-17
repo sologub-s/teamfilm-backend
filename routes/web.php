@@ -31,6 +31,12 @@ Route::group(['prefix' => 'v1'], function () {
 
     Route::delete('user/{id}', 'UserController@delete')
         ->where('id', '^[a-z0-9]{24}$');
+
+    Route::post('user/{id}/avatar', 'UserController@postAvatar')
+        ->where('id', '^[a-z0-9]{24}$');
+
+    Route::delete('user/{id}/avatar', 'UserController@deleteAvatar')
+        ->where('id', '^[a-z0-9]{24}$');
 });
 
 /**

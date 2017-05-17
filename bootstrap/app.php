@@ -41,6 +41,10 @@ $app->singleton(
     App\Exceptions\Handler::class
 );
 
+$app->singleton('\Storage\Storage', function ($app) {
+    return new \Storage\Storage();
+});
+
 /*
 |--------------------------------------------------------------------------
 | Return The Application
