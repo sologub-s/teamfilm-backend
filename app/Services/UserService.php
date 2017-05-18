@@ -37,7 +37,7 @@ class UserService extends AbstractService
             'about' => 'string|nullable',
             'awards' => 'string|nullable',
             'portfolio' => 'string|nullable',
-            'hasNoForeignPassport' => 'boolean|nullable',
+            'hasForeignPassport' => 'boolean|nullable',
             'weight' => 'int|max:250|nullable',
             'growth' => 'int|max:300|nullable',
             'eyes' => 'filteredarray:'.implode(',', User::$_eyes),
@@ -89,10 +89,10 @@ class UserService extends AbstractService
         }
 
         if(!self::isEmailAllowed($user->email, $user->id)) {
-            throw new \App\Exceptions\User\EmailAlreadyExistsException;
+            throw new \App\Exceptions\User\EmailAlreadyExistsException('Email already exists', 409);
         }
         if(!self::isNicknameAllowed($user->nickname, $user->id)) {
-            throw new \App\Exceptions\User\NicknameAlreadyExistsException;
+            throw new \App\Exceptions\User\NicknameAlreadyExistsException('Nickname already exists', 409);
         }
 
         try {

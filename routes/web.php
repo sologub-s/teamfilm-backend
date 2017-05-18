@@ -24,12 +24,15 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('user/{id}', 'UserController@get')
         ->where('id', '^[a-z0-9]{24}$');
 
-    Route::post('users', 'UserController@post');
+    Route::post('user', 'UserController@post');
 
     Route::patch('user/{id}', 'UserController@patch')
         ->where('id', '^[a-z0-9]{24}$');
 
     Route::delete('user/{id}', 'UserController@delete')
+        ->where('id', '^[a-z0-9]{24}$');
+
+    Route::get('user/{id}/avatar', 'UserController@getAvatar')
         ->where('id', '^[a-z0-9]{24}$');
 
     Route::post('user/{id}/avatar', 'UserController@postAvatar')

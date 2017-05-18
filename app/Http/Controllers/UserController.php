@@ -17,7 +17,7 @@ class UserController extends JsonController
     {
 
         return $this->response([
-            'user' => UserMapper::execute(UserService::register(UserService::get($id)), 'api')->toArray()
+            'user' => UserMapper::execute(UserService::get($id), 'api')->toArray()
         ]);
 
     }
@@ -51,6 +51,19 @@ class UserController extends JsonController
     {
         UserService::delete($id);
         return $this->response();
+    }
+
+    /**
+     * @param String $id
+     * @return Response
+     */
+    public function getAvatar(String $id)
+    {
+
+        return $this->response([
+            'avatar' => UserMapper::execute(UserService::get($id), 'api')->toArray()['avatar']
+        ]);
+
     }
 
     /**
