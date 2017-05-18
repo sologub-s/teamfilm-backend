@@ -45,26 +45,26 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
-        if ($exception instanceof \App\Components\Api\Exception) {
+        if (env('APP_CUSTOM_ERRORS') && $exception instanceof \App\Components\Api\Exception) {
             return response()->json([
                 'error' => $exception->getMessage(),
                 'code' => $exception->getCode(),
             ], $exception->getCode());
         }
-        if ($exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
+        if (env('APP_CUSTOM_ERRORS') && $exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
             return response()->json([
                 'error' => 'Method not allowed',
                 'code' => $exception->getStatusCode(),
             ], $exception->getStatusCode());
         }
-        if ($exception instanceof \InvalidArgumentException) {
+        if (env('APP_CUSTOM_ERRORS') && $exception instanceof \InvalidArgumentException) {
             return response()->json([
                 'error' => 'Invalid argument exception',
                 'code' => 400,
             ], 400);
         }
 
-        if ($exception instanceof NotFoundHttpException) {
+        if (env('APP_CUSTOM_ERRORS') && $exception instanceof NotFoundHttpException) {
             return response()->json([
                 'error' => 'Route not found',
                 'code' => 404,
