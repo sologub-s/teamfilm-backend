@@ -51,6 +51,19 @@ class Handler extends ExceptionHandler
                 'code' => $exception->getCode(),
             ], $exception->getCode());
         }
+        if ($exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
+            return response()->json([
+                'error' => 'Method not allowed',
+                'code' => $exception->getStatusCode(),
+            ], $exception->getStatusCode());
+        }
+        if ($exception instanceof \InvalidArgumentException) {
+            return response()->json([
+                'error' => 'Invalid argument exception',
+                'code' => 400,
+            ], 400);
+        }
+
         if ($exception instanceof NotFoundHttpException) {
             return response()->json([
                 'error' => 'Route not found',
