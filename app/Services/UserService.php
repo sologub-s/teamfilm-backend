@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Components\Api\Exception;
+use App\Exceptions\EntityNotFoundException;
+use App\Exceptions\InvalidEntityException;
 use \App\Models\User;
 use App\Mappers\UserMapper;
 
@@ -16,7 +18,7 @@ class UserService extends AbstractService
      */
     public static function isValid(\App\Models\AbstractModel $user)
     {
-        $validator = Validator::make(UserMapper::execute($user, 'validate')->toArray(), [
+        $validator = Validator::make(UserMapper::execute($user, 'service')->toArray(), [
             'email' => 'email|max:255|required|string',
             'password' => 'string|size:60|required',
             'created_at' => 'int|required',
@@ -24,6 +26,8 @@ class UserService extends AbstractService
             'activated_at' => 'int|nullable',
             'is_active' => 'boolean|required',
             'activation_token' => 'string|alpha_num|size:13|required',
+            'access_token' => 'string|size:32|nullable',
+            'access_token_expire' => 'int|nullable',
             'name' => 'string|max:255|required|alpha_dash',
             'surname' => 'string|max:255|required|alpha_dash',
             'nickname' => 'string|max:255|required|alpha_dash',
@@ -82,7 +86,7 @@ class UserService extends AbstractService
         $user->created_at = $user->updated_at = time();
         $user->is_active = false;
         $user->activation_token = uniqid();
-        $user->password = password_hash($user->password, PASSWORD_BCRYPT);
+        $user->password = self::encryptPassword($user->password);
 
         if (TRUE !== self::isValid($user)) {
             throw new \App\Exceptions\InvalidEntityException('User data validation errors: '.implode('; ', self::isValid($user)));
@@ -122,7 +126,7 @@ class UserService extends AbstractService
         }
 
         $user->updated_at = time();
-        $data['password'] = isset($data['password']) ? password_hash($data['password'], PASSWORD_BCRYPT) : $user->password;
+        $data['password'] = isset($data['password']) ? self::encryptPassword($data['password']) : $user->password;
         foreach (['_id','id','email','created_at','updated_at','activated_at','activation_token','is_active'] as $k) {
             if (isset($data[$k])) {
                 unset($data[$k]);
@@ -230,6 +234,58 @@ class UserService extends AbstractService
 
     }
 
+    /*
+    public static function createAccessToken (String $email, String $rawPassword, Int $expirationDate = 0) {
+
+    }
+    */
+
+    public static function login (String $email, String $password, String $expireAt = null) {
+
+        if (!is_null($expireAt) && $expireAt < time()) {
+            throw new InvalidEntityException('Expire time should be whether null or timestamp in future');
+        }
+
+        if (!$user = self::getUserByEmail($email)) {
+            throw new EntityNotFoundException('User not found');;
+        }
+
+        if(!password_verify($password, $user->password)) {
+            return false;
+        }
+
+        $user->access_token = self::createAccessToken($email);
+        $user->access_token_expire = $expireAt;
+
+        if (TRUE !== self::isValid($user)) {
+            throw new \App\Exceptions\InvalidEntityException('User data validation errors: '.implode('; ', self::isValid($user)));
+        }
+
+        try {
+            $user->save();
+        } catch (\Exception $e) {
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
+        }
+
+        return [
+            'access_token' => $user->access_token,
+            'access_token_expire' => $user->access_token_expire,
+        ];
+    }
+
+    protected static function createAccessToken (String $email) {
+
+        return md5(env('APP_KEY').'|'.$email.'|'.time().'|'.microtime().rand(1, 100000));
+    }
+
+    /**
+     * @param String|null $email
+     * @return User|null
+     */
+    public static function getUserById (String $id = null) {
+        return User::fetchOne(['id' => $id]);
+    }
+
     /**
      * @param String|null $email
      * @return User|null
@@ -284,6 +340,14 @@ class UserService extends AbstractService
                 &&
             mail(/*$user->email*/'zeitgeist1988@gmail.com', 'Now please activate your account' , env('APP_URL').'/user/activate/'.$user->activation_token)
         ;
+    }
+
+    /**
+     * @param String $rawPassword
+     * @return string
+     */
+    protected static function encryptPassword (String $rawPassword) : string {
+        return password_hash($rawPassword, PASSWORD_BCRYPT);
     }
 
 }

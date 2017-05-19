@@ -17,29 +17,49 @@ Route::get('/', function () {
 
 Route::get('swagger', 'SwaggerController@index');
 
+/**
+ * API V1
+ */
 Route::group(['prefix' => 'v1'], function () {
-    /**
-     * /user(s)
-     */
-    Route::get('user/{id}', 'UserController@get')
-        ->where('id', '^[a-z0-9]{24}$');
 
-    Route::post('user', 'UserController@post');
+    Route::group(['prefix' => 'user'], function () {
 
-    Route::patch('user/{id}', 'UserController@patch')
-        ->where('id', '^[a-z0-9]{24}$');
+        // GET /user/{id}
+        Route::get('{id}', 'UserController@get')
+            ->where('id', '^[a-z0-9]{24}$');
 
-    Route::delete('user/{id}', 'UserController@delete')
-        ->where('id', '^[a-z0-9]{24}$');
+        // POST /user
+        Route::post('', 'UserController@post');
 
-    Route::get('user/{id}/avatar', 'UserController@getAvatar')
-        ->where('id', '^[a-z0-9]{24}$');
+        // PATCH /user/{id}
+        Route::patch('{id}', 'UserController@patch')
+            ->where('id', '^[a-z0-9]{24}$');
 
-    Route::post('user/{id}/avatar', 'UserController@postAvatar')
-        ->where('id', '^[a-z0-9]{24}$');
+        // DELETE /user/{id}
+        Route::delete('{id}', 'UserController@delete')
+            ->where('id', '^[a-z0-9]{24}$');
 
-    Route::delete('user/{id}/avatar', 'UserController@deleteAvatar')
-        ->where('id', '^[a-z0-9]{24}$');
+        // GET /user/{id}/avatar
+        Route::get('{id}/avatar', 'UserController@getAvatar')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // POST /user/{id}/avatar
+        Route::post('{id}/avatar', 'UserController@postAvatar')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // DELETE /user/{id}/avatar
+        Route::delete('{id}/avatar', 'UserController@deleteAvatar')
+            ->where('id', '^[a-z0-9]{24}$');
+    });
+
+    Route::group(['prefix' => 'auth'], function () {
+
+        // POST /auth/login
+        Route::post('login', 'AuthController@postLogin');
+
+        // POST /auth/logout
+        Route::post('logout', 'AuthController@postLogout');
+    });
 });
 
 /**

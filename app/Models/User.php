@@ -17,6 +17,8 @@ namespace App\Models;
  * @property int        $activated_at
  * @property boolean    $is_active
  * @property string     $activation_token
+ * @property string     $access_token
+ * @property int        $access_token_expire
  * @property string     $name
  * @property string     $surname
  * @property string     $nickname

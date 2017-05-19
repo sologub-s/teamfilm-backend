@@ -47,7 +47,7 @@ class UserMapper extends \MongoStar\Map
         ];
     }
 
-    public function validate()
+    public function service()
     {
         return [
             'id' => 'id',
@@ -58,6 +58,8 @@ class UserMapper extends \MongoStar\Map
             'activated_at' => 'activated_at',
             'is_active' => 'is_active',
             'activation_token' => 'activation_token',
+            'access_token' => 'access_token',
+            'access_token_expire' => 'access_token_expire',
             'name' => 'name',
             'surname' => 'surname',
             'nickname' => 'nickname',
