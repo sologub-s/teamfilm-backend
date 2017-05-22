@@ -50,15 +50,16 @@ Route::group(['prefix' => 'v1'], function () {
         // DELETE /user/{id}/avatar
         Route::delete('{id}/avatar', 'UserController@deleteAvatar')
             ->where('id', '^[a-z0-9]{24}$');
-    });
 
-    Route::group(['prefix' => 'auth'], function () {
+        // POST /user/{id}/avatar/crop
+        Route::post('{id}/avatar/crop', 'UserController@cropAvatar')
+            ->where('id', '^[a-z0-9]{24}$');
 
-        // POST /auth/login
-        Route::post('login', 'AuthController@postLogin');
+        // POST /user/login
+        Route::post('login', 'UserController@postLogin');
 
-        // POST /auth/logout
-        Route::post('logout', 'AuthController@postLogout');
+        // POST /user/logout
+        Route::post('logout', 'UserController@postLogout');
     });
 });
 

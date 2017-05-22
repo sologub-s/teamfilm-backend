@@ -44,6 +44,7 @@ class UserMapper extends \MongoStar\Map
             'vocal' => 'vocal',
             'dance' => 'dance',
             'avatar' => 'avatar',
+            'avatar_cropped' => 'avatar_cropped',
         ];
     }
 
@@ -58,8 +59,7 @@ class UserMapper extends \MongoStar\Map
             'activated_at' => 'activated_at',
             'is_active' => 'is_active',
             'activation_token' => 'activation_token',
-            'access_token' => 'access_token',
-            'access_token_expire' => 'access_token_expire',
+            'access_tokens' => 'access_tokens',
             'name' => 'name',
             'surname' => 'surname',
             'nickname' => 'nickname',
@@ -79,8 +79,12 @@ class UserMapper extends \MongoStar\Map
             'eyes' => 'eyes',
             'vocal' => 'vocal',
             'dance' => 'dance',
-            'avatar' => 'avatar',
+            'avatar_cropped' => 'avatar_cropped',
         ];
+    }
+
+    public function getAccess_tokens ($user) : array {
+        return is_array($user->access_tokens) ? $user->access_tokens : [];
     }
 
     public function getPositions ($user) : array {

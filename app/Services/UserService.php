@@ -26,8 +26,7 @@ class UserService extends AbstractService
             'activated_at' => 'int|nullable',
             'is_active' => 'boolean|required',
             'activation_token' => 'string|alpha_num|size:13|required',
-            'access_token' => 'string|size:32|nullable',
-            'access_token_expire' => 'int|nullable',
+            'access_tokens' => 'array',
             'name' => 'string|max:255|required|alpha_dash',
             'surname' => 'string|max:255|required|alpha_dash',
             'nickname' => 'string|max:255|required|alpha_dash',
@@ -51,6 +50,10 @@ class UserService extends AbstractService
         return $validator->fails() ? $validator->errors()->all() : true;
     }
 
+    /**
+     * @param array|null $avatar
+     * @return bool
+     */
     public static function isValidAvatar(Array $avatar = null)
     {
         if (!is_array($avatar)) {
@@ -142,6 +145,10 @@ class UserService extends AbstractService
             throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
+        if ($user->avatar_cropped && TRUE !== self::isValidAvatar($user->avatar_cropped)) {
+            throw new \App\Exceptions\InvalidEntityException('Cropped avatar data is not valid');
+        }
+
         if(!self::isNicknameAllowed($user->nickname, $user->id)) {
             throw new \App\Exceptions\User\NicknameAlreadyExistsException;
         }
@@ -180,6 +187,9 @@ class UserService extends AbstractService
     /**
      * @param String $id User id
      * @return array
+     * @throws EntityNotFoundException
+     * @throws InvalidEntityException
+     * @throws \App\Exceptions\CannotSaveEntityException
      */
     public static function setAvatar(String $id) : array {
         $avatar = resolve('\Storage\Storage')->upload('avatar', \Storage\Storage::FILES)[0]->asArray();
@@ -202,6 +212,59 @@ class UserService extends AbstractService
     }
 
     /**
+     * @param String $id User id
+     * @param Int $x
+     * @param Int $y
+     * @param Int $w
+     * @param Int $h
+     * @return array
+     * @throws EntityNotFoundException
+     * @throws Exception
+     * @throws InvalidEntityException
+     * @throws \App\Exceptions\CannotSaveEntityException
+     */
+    public static function cropAvatar(String $id, Int $x, Int $y, Int $w, Int $h) : array {
+
+        if (!$user = User::fetchOne(['id' => $id])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
+        }
+
+        if (TRUE !== self::isValidAvatar($user->avatar)) {
+            throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
+        }
+
+        resolve('\Storage\Storage')->delete($user->avatar_cropped['identity']);
+
+        try {
+            $avatarImagick = new \Imagick((config('services.storage.url') . $user->avatar['url']));
+            $avatarImagick->cropImage($w, $h, $x, $y);
+            $avatarImagick->setImageFormat('png');
+            $avatarImagick->writeImage($tempnam = sys_get_temp_dir() . '/avatar_crop_' . str_replace(['.',' '], '_', microtime()) . '.png');
+            $avatar_cropped = resolve('\Storage\Storage')->upload([$tempnam], \Storage\Storage::FILE)[0]->asArray();
+            $avatar_cropped['width'] = $avatarImagick->getImageWidth();
+            $avatar_cropped['height'] = $avatarImagick->getImageHeight();
+            $user->avatar_cropped = $avatar_cropped;
+        } catch (\Exception $e) {
+            throw new \App\Components\Api\Exception('Cannot crop avatar', 500);
+        }
+
+        if(file_exists($tempnam)) {
+            unlink($tempnam);
+        }
+
+        if (TRUE !== self::isValidAvatar($user->avatar_cropped)) {
+            throw new \App\Exceptions\InvalidEntityException('Cropped avatar data is not valid');
+        }
+        try {
+            $user->save();
+        } catch (\Exception $e) {
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
+        }
+
+        return $user->avatar_cropped;
+    }
+
+    /**
      * @param String $id
      * @return bool
      * @throws \App\Exceptions\CannotRemoveEntityException
@@ -214,48 +277,65 @@ class UserService extends AbstractService
             throw new \App\Exceptions\EntityNotFoundException('User not found');
         }
 
-        if (!$user->avatar) {
+        if (!$user->avatar && !$user->avatar_cropped) {
             return true;
         }
 
-        if (!self::isValidAvatar($user->avatar)) {
+        if ($user->avatar && !self::isValidAvatar($user->avatar)) {
             throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
+        if ($user->avatar_cropped && !self::isValidAvatar($user->avatar_cropped)) {
+            throw new \App\Exceptions\InvalidEntityException('Cropped avatar data is not valid');
+        }
+
         try {
-            resolve('\Storage\Storage')->delete($user->avatar['identity']);
-            $user->avatar = null;
+            if($user->avatar) {
+                resolve('\Storage\Storage')->delete($user->avatar['identity']);
+                $user->avatar = null;
+            }
+            if($user->avatar_cropped) {
+                resolve('\Storage\Storage')->delete($user->avatar_cropped['identity']);
+                $user->avatar_cropped = null;
+            }
             $user->save();
         } catch (\Exception $e) {
-            throw new \App\Exceptions\CannotRemoveEntityException('Avatar cannot be deleted or user cannot be updated');
+            throw new \App\Exceptions\CannotRemoveEntityException('Avatar/cropped avatar cannot be deleted or user cannot be updated');
         }
 
         return true;
 
     }
 
-    /*
-    public static function createAccessToken (String $email, String $rawPassword, Int $expirationDate = 0) {
+    public static function login (String $email, String $password, Int $accessTokenExpireAt = null) {
 
-    }
-    */
-
-    public static function login (String $email, String $password, String $expireAt = null) {
-
-        if (!is_null($expireAt) && $expireAt < time()) {
+        if (!is_null($accessTokenExpireAt) && $accessTokenExpireAt < time()) {
             throw new InvalidEntityException('Expire time should be whether null or timestamp in future');
         }
 
         if (!$user = self::getUserByEmail($email)) {
-            throw new EntityNotFoundException('User not found');;
+            throw new EntityNotFoundException('User not found');
+        }
+
+        if (!$user->is_active) {
+            return false;
         }
 
         if(!password_verify($password, $user->password)) {
             return false;
         }
 
-        $user->access_token = self::createAccessToken($email);
-        $user->access_token_expire = $expireAt;
+        $accessTokens = $user->access_tokens;
+
+        $token = [
+            'access_token' => self::createAccessToken($email),
+            'access_token_expire_at' => $accessTokenExpireAt,
+            'access_token_last_used' => time(),
+        ];
+
+        $accessTokens[] = $token;
+
+        $user->access_tokens = $accessTokens;
 
         if (TRUE !== self::isValid($user)) {
             throw new \App\Exceptions\InvalidEntityException('User data validation errors: '.implode('; ', self::isValid($user)));
@@ -267,10 +347,36 @@ class UserService extends AbstractService
             throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
         }
 
-        return [
-            'access_token' => $user->access_token,
-            'access_token_expire' => $user->access_token_expire,
-        ];
+        return $token;
+    }
+
+    public static function logout (String $accessToken) {
+
+        if (!$user = self::getUserByAccessToken($accessToken)) {
+            return true;
+        }
+
+        $accessTokens = $user->access_tokens;
+
+        foreach ($accessTokens as $k => $v) {
+            if ($v['access_token'] == $accessToken) {
+                unset($accessTokens[$k]);
+            }
+        }
+
+        $user->access_tokens = array_values($accessTokens);
+
+        if (TRUE !== self::isValid($user)) {
+            throw new \App\Exceptions\InvalidEntityException('User data validation errors: '.implode('; ', self::isValid($user)));
+        }
+
+        try {
+            $user->save();
+        } catch (\Exception $e) {
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be saved');
+        }
+
+        return true;
     }
 
     protected static function createAccessToken (String $email) {
@@ -300,6 +406,14 @@ class UserService extends AbstractService
      */
     public static function getUserByNickname (String $nickname = null) {
         return User::fetchOne(['nickname' => $nickname]);
+    }
+
+    /**
+     * @param String|null $access_token
+     * @return User|null
+     */
+    public static function getUserByAccessToken (String $accessToken = null) {
+        return User::fetchOne(['access_tokens' => ['$elemMatch' => ['access_token' => $accessToken]]]);
     }
 
     /**

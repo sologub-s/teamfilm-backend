@@ -85,4 +85,41 @@ class UserController extends JsonController
         return $this->response();
     }
 
+    /**
+     * @param String $id
+     * @return Response
+     */
+    public function cropAvatar (String $id) {
+        return $this->response([
+            'avatar' => UserService::cropAvatar($id, (int) $this->getJsonParam('crop.x'), (int) $this->getJsonParam('crop.y'), (int) $this->getJsonParam('crop.w'), (int) $this->getJsonParam('crop.h'))
+        ]);
+    }
+
+    /**
+     * @return Response
+     */
+    public function postLogin ()
+    {
+        if (FALSE === $result = UserService::login($this->getJsonParam('user.email'), $this->getJsonParam('user.password'), $this->getJsonParam('user.access_token_expire_at'))) {
+            return $this->response([
+                'loggedIn' => false,
+            ]);
+        }
+        return $this->response(array_merge($result, [
+            'loggedIn' => true,
+        ]));
+
+    }
+
+    /**
+     * @return Response
+     */
+    public function postLogout ()
+    {
+        return $this->response([
+            'loggedOut' => UserService::logout($this->getJsonParam('user.access_token')),
+        ]);
+
+    }
+
 }
