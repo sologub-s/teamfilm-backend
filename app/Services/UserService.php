@@ -9,6 +9,7 @@ use \App\Models\User;
 use App\Mappers\UserMapper;
 
 use \Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
 
 class UserService extends AbstractService
 {
@@ -449,6 +450,14 @@ class UserService extends AbstractService
      * @return bool
      */
     public static function sendRegistrationEmail (String $userId) : bool {
+
+        $user = User::fetchOne(['id' => $userId]);
+
+        Mail::to(/*$user->email*/'zeitgeist1988@gmail.com')
+            ->send(new \App\Mail\UserRegistered($user));
+
+        return true;
+
         return
             ($user = User::fetchOne(['id' => $userId]))
                 &&
