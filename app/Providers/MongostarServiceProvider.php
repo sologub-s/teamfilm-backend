@@ -22,7 +22,6 @@ class MongostarServiceProvider extends ServiceProvider{
                 ],
             ],
             'db' => config('database.connections.mongodb_mongostar.database'),
-            'dir' => realpath(config('database.connections.mongodb_mongostar.dir')),
             'pretty' => true,
         ]);
     }

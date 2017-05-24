@@ -1,0 +1,25 @@
+{
+  "user": {
+    "email": "zeitgeist@ukr.net",
+    "password": "12345",
+    "name": "Serhii",
+    "surname": "Solohub",
+    "nickname": "ZeitGeist",
+    "cellphone": "+380938923508",
+    "sex": "m",
+    "birthday": "576842464",
+    "country": "583f35399bb2f9300fd1effe",
+    "city": "583f355a9bb2f9300fd1efff",
+    "company": "TeamFilm",
+    "positions": ["ceo"],
+    "about": "I, me and myself",
+    "awards": "Golden Axe",
+    "portfolio": "A lot of work has been done",
+    "hasForeignPassport": false,
+    "weight": "140",
+    "growth": "182",
+    "eyes": ["brown"],
+    "vocal": ["bass","soprano"],
+    "dance": ["hip-hop"]
+  }
+}
