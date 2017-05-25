@@ -21,6 +21,17 @@
 
 require __DIR__.'/../bootstrap/autoload.php';
 
+/**
+ * Brutal kostyl'
+ * Emulating PHPUNIT environment
+ */
+if (isset($_GET['testing'])) {
+    $phpunit = new \SimpleXMLElement(file_get_contents(dirname(__FILE__).'/../phpunit.xml'));
+    foreach($phpunit->php->env as $item) {
+        putenv($item['name'].'='.$item['value']);
+    }
+}
+
 /*
 |--------------------------------------------------------------------------
 | Turn On The Lights

@@ -25,6 +25,7 @@ return [
     |
     */
 
+    //'env' => isset($_GET['testing']) ? 'testing' : env('APP_ENV', 'production'),
     'env' => env('APP_ENV', 'production'),
 
     /*

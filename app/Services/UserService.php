@@ -30,7 +30,7 @@ class UserService extends AbstractService
             'access_tokens' => 'array',
             'name' => 'string|max:255|required|alpha_dash',
             'surname' => 'string|max:255|required|alpha_dash',
-            'nickname' => 'string|max:255|required|alpha_dash',
+            'nickname' => 'string|max:255|required|nickname',
             'cellphone' => 'string|max:20|nullable|phone:AUTO',
             'sex' => 'string|size:1|nullable|in:m,w',
             'birthday' => 'int|nullable',
@@ -77,7 +77,22 @@ class UserService extends AbstractService
         if (!$user = User::fetchOne(['id' => $id])) {
             throw new \App\Exceptions\EntityNotFoundException('User not found');
         }
-        return User::fetchOne(['id' => $id]);
+        return $user;
+    }
+
+    /**
+     * @param String|null $fieldName
+     * @param String|null $fieldValue
+     * @return User|null
+     */
+    public static function getByField (String $fieldName = null, String $fieldValue = null) {
+        if (!in_array($fieldName, ['id','email','nickname','activation_token'])) {
+            throw new \App\Components\Api\Exception('Only fields id, email, nickname or activation_token are possible', 400);
+        }
+        if (!$user = User::fetchOne([$fieldName => $fieldValue])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
+        }
+        return $user;
     }
 
     /**
@@ -186,6 +201,29 @@ class UserService extends AbstractService
     }
 
     /**
+     * @param String $activation_token
+     * @throws EntityNotFoundException
+     * @throws \App\Exceptions\CannotSaveEntityException
+     */
+    public static function activateByToken(String $activation_token) : User
+    {
+
+        if (!$user = User::fetchOne(['activation_token' => $activation_token])) {
+            throw new \App\Exceptions\EntityNotFoundException('User not found');
+        }
+
+        try {
+            $user->is_active = true;
+            $user->activated_at = time();
+            $user->save();
+        } catch (\Exception $e) {
+            throw new \App\Exceptions\CannotSaveEntityException('User cannot be activated');
+        }
+
+        return $user;
+    }
+
+    /**
      * @param String $id User id
      * @return array
      * @throws EntityNotFoundException
@@ -193,13 +231,14 @@ class UserService extends AbstractService
      * @throws \App\Exceptions\CannotSaveEntityException
      */
     public static function setAvatar(String $id) : array {
-        $avatar = resolve('\Storage\Storage')->upload('avatar', \Storage\Storage::FILES)[0]->asArray();
-        if (TRUE !== self::isValidAvatar($avatar)) {
-            throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
-        }
 
         if (!$user = User::fetchOne(['id' => $id])) {
             throw new \App\Exceptions\EntityNotFoundException('User not found');
+        }
+
+        $avatar = resolve('\Storage\Storage')->upload('avatar', \Storage\Storage::FILES)[0]->asArray();
+        if (TRUE !== self::isValidAvatar($avatar)) {
+            throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
         $user->avatar = $avatar;
@@ -457,12 +496,6 @@ class UserService extends AbstractService
             ->send(new \App\Mail\UserRegistered($user));
 
         return true;
-
-        return
-            ($user = User::fetchOne(['id' => $userId]))
-                &&
-            mail(/*$user->email*/'zeitgeist1988@gmail.com', 'Now please activate your account' , env('APP_URL').'/user/activate/'.$user->activation_token)
-        ;
     }
 
     /**

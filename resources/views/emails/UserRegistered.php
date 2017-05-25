@@ -68,7 +68,7 @@
         <div class="flex-center position-ref full-height">
 
             <div class="content">
-                Now please activate your account' , <?php echo env('APP_URL'); ?>/user/activate/<?php echo $user->activation_token; ?>
+                Now please activate your account: <?php echo env('APP_URL'); ?>/user/activate/<?php echo $user->activation_token; ?>
             </div>
         </div>
     </body>

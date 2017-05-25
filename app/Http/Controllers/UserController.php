@@ -17,7 +17,21 @@ class UserController extends JsonController
     {
 
         return $this->response([
-            'user' => UserMapper::execute(UserService::get($id), 'api')->toArray()
+            'user' => UserMapper::execute(UserService::get($id), 'api')->toArray(),
+        ]);
+
+    }
+
+    /**
+     * @param String $field
+     * @param String $value
+     * @return Response
+     */
+    public function getByField(String $field, String $value)
+    {
+
+        return $this->response([
+            'user' => UserMapper::execute(UserService::getByField($field, $value), 'api')->toArray(),
         ]);
 
     }
@@ -39,7 +53,7 @@ class UserController extends JsonController
     public function patch(String $id)
     {
         return $this->response([
-            'user' => UserMapper::execute(UserService::update($id, $this->getJsonParam('user')), 'api')->toArray()
+            'user' => UserMapper::execute(UserService::update($id, $this->getJsonParam('user')), 'api')->toArray(),
         ]);
     }
 
@@ -51,6 +65,16 @@ class UserController extends JsonController
     {
         UserService::delete($id);
         return $this->response();
+    }
+
+    /**
+     * @param String $activation_token
+     * @return Response
+     */
+    public function postActivate (String $activation_token) {
+        return $this->response([
+            'user' => UserMapper::execute(UserService::activateByToken($activation_token), 'api')->toArray(),
+        ]);
     }
 
     /**

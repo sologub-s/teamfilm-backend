@@ -28,6 +28,9 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('{id}', 'UserController@get')
             ->where('id', '^[a-z0-9]{24}$');
 
+        // GET /user/by/{field}/{value}
+        Route::get('by/{field}/{value}', 'UserController@getByField');
+
         // POST /user
         Route::post('', 'UserController@post');
 
@@ -38,6 +41,9 @@ Route::group(['prefix' => 'v1'], function () {
         // DELETE /user/{id}
         Route::delete('{id}', 'UserController@delete')
             ->where('id', '^[a-z0-9]{24}$');
+
+        // POST /user/activate/{activation_token}
+        Route::post('activate/{activation_token}', 'UserController@postActivate');
 
         // GET /user/{id}/avatar
         Route::get('{id}/avatar', 'UserController@getAvatar')

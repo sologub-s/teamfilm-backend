@@ -32,4 +32,9 @@ class CustomValidator extends \Illuminate\Validation\Validator
     {
         return is_array($value) && !array_diff($value, $parameters);
     }
+
+    public function validateNickname($attribute, $value, $parameters)
+    {
+        return (bool) preg_match('/^[\w-\s]+$/i', $value);
+    }
 }

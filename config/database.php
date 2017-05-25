@@ -42,7 +42,6 @@ return [
                 ]
             ],
             'database' => env('MONGODB_DATABASE', 'teamfilm'),
-            'dir' => env('MONGODB_DIR', '../database/flat'),
         ],
 
         'mongodb' => [

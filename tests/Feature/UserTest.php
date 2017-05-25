@@ -33,6 +33,52 @@ class UserTest extends TestCase
         echo "\nNaebnuli '".env('MONGODB_DATABASE')."'";
     }
 
+    /**
+     * Real file upload
+     *
+     * @param String $url
+     * @param String $path
+     * @return array
+     */
+    protected function uploadFile(String $url, String $path) {
+
+        // initialise the curl request
+        $request = curl_init($url);
+
+        // send a file
+        curl_setopt($request, CURLOPT_POST, true);
+        curl_setopt($request, CURLOPT_HEADER, true);
+        curl_setopt($request, CURLOPT_POSTFIELDS, [
+            'avatar[]' => new \CURLFile($path),
+        ]);
+
+        // output the response
+        curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
+        $return = [
+            'content' => explode("\r\n\r\n", curl_exec($request))[2],
+            'code' => curl_getinfo($request, CURLINFO_HTTP_CODE),
+        ];
+        // close the session
+        curl_close($request);
+
+        return $return;
+    }
+
+    public function is_url_exist($url){
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if($code == 200){
+            $status = true;
+        }else{
+            $status = false;
+        }
+        curl_close($ch);
+        return $status;
+    }
+
     public static function setUpBeforeClass ()
     {
         echo "\nEnvironment is " . env('APP_ENV');
@@ -49,12 +95,23 @@ class UserTest extends TestCase
     }
 
     /**
+     * @param $userId
+     * @return mixed
+     */
+    protected function getUser($userId) {
+        $response = $this->json('GET', 'v1/user/'.$userId);
+        return json_decode($response->getContent(), true)['user'];
+    }
+
+    /**
      * User creation
      *
      * @return void
      */
     public function testUserCreation()
     {
+
+        Mail::fake();
 
         $userJson = file_get_contents(dirname(__FILE__).'/UserTest/user.json');
 
@@ -94,6 +151,10 @@ class UserTest extends TestCase
             $this->fail('activation_token should be a 13 characters string !');
         }
 
+        Mail::assertSent(\App\Mail\UserRegistered::class, function ($mail) use ($data) {
+            return $mail->hasTo('zeitgeist1988@gmail.com') && false !== stristr($mail->render(), env('APP_URL').'/user/activate/'.$data['activation_token']);
+        });
+
         return $data['id'];
 
     }
@@ -102,7 +163,7 @@ class UserTest extends TestCase
      * @depends testUserCreation
      */
     public function testGetUserById($userId) {
-        $response = $this->json('GET', 'v1/user/'.$userId, ['user' => []]);
+        $response = $this->json('GET', 'v1/user/'.$userId);
         $response
             ->assertStatus(200)
             ->assertJsonFragment([
@@ -128,5 +189,142 @@ class UserTest extends TestCase
             ])
         ;
     }
+
+    /**
+     * @param $userId
+     * @depends testUserCreation
+     * @return void
+     */
+    public function testGetUserByNotId($userId) {
+        $user = $this->getUser($userId);
+
+        $responseByEmail = $this->json('GET', 'v1/user/by/email/'.$user['email']);
+        $responseByEmail
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $user['id'],
+                'email' => $user['email'],
+            ])
+        ;
+
+        $responseByNonExistingEmail = $this->json('GET', 'v1/user/by/email/'.'nonexistingemail@example.com');
+        $responseByNonExistingEmail->assertStatus(404);
+
+        $responseByNickname = $this->json('GET', 'v1/user/by/nickname/'.$user['nickname']);
+        $responseByNickname
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $user['id'],
+                'nickname' => $user['nickname'],
+            ])
+        ;
+
+        $responseByNonExistingNickname = $this->json('GET', 'v1/user/by/nickname/'.'Non Existing-Nick_Name111');
+        $responseByNonExistingNickname->assertStatus(404);
+
+        $responseByActivationToken = $this->json('GET', 'v1/user/by/activation_token/'.$user['activation_token']);
+        $responseByActivationToken
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $user['id'],
+                'activation_token' => $user['activation_token'],
+            ])
+        ;
+
+        $responseByNonExistingActivationToken = $this->json('GET', 'v1/user/by/activation_token/'.uniqid());
+        $responseByNonExistingActivationToken->assertStatus(404);
+    }
+
+    /**
+     * @param $userId
+     * @depends testUserCreation
+     */
+    public function testUserActivation($userId) {
+        $user = $this->getUser($userId);
+        $beforeTimestamp = time();
+        $response = $this->json('POST', 'v1/user/activate/'.$user['activation_token']);
+        $afterTimestamp = time();
+        $response
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $user['id'],
+                'is_active' => true,
+            ])
+        ;
+        $data = json_decode($response->getContent(), true)['user'];
+        $this->assertGreaterThanOrEqual($beforeTimestamp, $data['activated_at']);
+        $this->assertLessThanOrEqual($afterTimestamp, $data['activated_at']);
+    }
+
+    /**
+     * @param $userId
+     * @depends testUserCreation
+     */
+    public function testUserAvatar($userId) {
+        $file = dirname(__FILE__).'/UserTest/terminator.jpg';
+        $result = $this->uploadFile(env('APP_URL').'/v1/user/'.$userId.'/avatar'.'?testing', $file);
+        $this->assertEquals($result['code'], 200);
+        $avatarJson = json_decode($result['content'], true);
+        $this->assertArrayHasKey('avatar', $avatarJson);
+
+        $avatarResponse = $this->json('GET', 'v1/user/'.$userId.'/avatar')->assertStatus(200);
+        $avatarContent = $avatarResponse->getContent();
+        $avatar = json_decode($avatarContent, true);
+        $this->assertTrue(is_array($avatar['avatar']));
+        $this->assertArrayHasKey('identity', $avatar['avatar']);
+        $this->assertArrayHasKey('name', $avatar['avatar']);
+        $this->assertArrayHasKey('url', $avatar['avatar']);
+        $this->assertEquals($avatarJson['avatar']['identity'], $avatar['avatar']['identity']);
+        $this->assertEquals($avatarJson['avatar']['name'], $avatar['avatar']['name']);
+        $this->assertEquals($avatarJson['avatar']['url'], $avatar['avatar']['url']);
+
+        $localFileImagick = new \Imagick($file);
+        try {
+            $avatarImagick = new \Imagick((config('services.storage.url') . $avatar['avatar']['url']));
+        } catch (\Exception $e) {
+            $this->fail($e->getMessage());
+        }
+        $this->assertEquals($localFileImagick->getImageWidth(), $avatarImagick->getImageWidth());
+        $this->assertEquals($localFileImagick->getImageHeight(), $avatarImagick->getImageHeight());
+
+        $cropParams = [
+            'x' => 30,
+            'y' => 50,
+            'w' => 400,
+            'h' => 300,
+        ];
+        $cropResponse = $this->json('POST', 'v1/user/'.$userId.'/avatar/crop', ['crop' => $cropParams,]);
+        $cropResponse->assertStatus(200);
+        $cropContent = $cropResponse->getContent();
+        $crop = json_decode($cropContent, true);
+        $this->assertArrayHasKey('identity', $crop['avatar']);
+        $this->assertArrayHasKey('name', $crop['avatar']);
+        $this->assertArrayHasKey('url', $crop['avatar']);
+        $this->assertArrayHasKey('width', $crop['avatar']);
+        $this->assertArrayHasKey('height', $crop['avatar']);
+        try {
+            $cropImagick = new \Imagick((config('services.storage.url') . $crop['avatar']['url']));
+        } catch (\Exception $e) {
+            $this->fail($e->getMessage());
+        }
+        $this->assertEquals($cropImagick->getImageWidth(), $cropParams['w']);
+        $this->assertEquals($cropImagick->getImageHeight(), $cropParams['h']);
+
+        $user = $this->getUser($userId);
+        $this->assertTrue(is_array($user['avatar_cropped']));
+        $this->assertEquals($user['avatar_cropped']['identity'], $crop['avatar']['identity']);
+
+        $this->assertTrue($this->is_url_exist((config('services.storage.url') . $avatar['avatar']['url'])));
+        $this->assertTrue($this->is_url_exist((config('services.storage.url') . $crop['avatar']['url'])));
+
+        $this->json('DELETE', 'v1/user/'.$userId.'/avatar')->assertStatus(200);
+        $user = $this->getUser($userId);
+        $this->assertNull($user['avatar']);
+        $this->assertNull($user['avatar_cropped']);
+        $this->assertFalse($this->is_url_exist((config('services.storage.url') . $avatar['avatar']['url'])));
+        $this->assertFalse($this->is_url_exist((config('services.storage.url') . $crop['avatar']['url'])));
+    }
+
+
 
 }
