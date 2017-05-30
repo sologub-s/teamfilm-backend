@@ -24,48 +24,53 @@ Route::group(['prefix' => 'v1'], function () {
 
     Route::group(['prefix' => 'user'], function () {
 
-        // GET /user/{id}
-        Route::get('{id}', 'UserController@get')
-            ->where('id', '^[a-z0-9]{24}$');
+        Route::group(['middleware' => 'authorization'], function () {
 
-        // GET /user/by/{field}/{value}
-        Route::get('by/{field}/{value}', 'UserController@getByField');
+            // GET /user/{id}
+            Route::get('{id}', 'UserController@get')
+                ->where('id', '^[a-z0-9]{24}$');
 
-        // POST /user
-        Route::post('', 'UserController@post');
+            // GET /user/by/{field}/{value}
+            Route::get('by/{field}/{value}', 'UserController@getByField');
 
-        // PATCH /user/{id}
-        Route::patch('{id}', 'UserController@patch')
-            ->where('id', '^[a-z0-9]{24}$');
+            // POST /user
+            Route::post('', 'UserController@post');
 
-        // DELETE /user/{id}
-        Route::delete('{id}', 'UserController@delete')
-            ->where('id', '^[a-z0-9]{24}$');
+            // PATCH /user/{id}
+            Route::patch('{id}', 'UserController@patch')
+                ->where('id', '^[a-z0-9]{24}$');
 
-        // POST /user/activate/{activation_token}
-        Route::post('activate/{activation_token}', 'UserController@postActivate');
+            // DELETE /user/{id}
+            Route::delete('{id}', 'UserController@delete')
+                ->where('id', '^[a-z0-9]{24}$');
 
-        // GET /user/{id}/avatar
-        Route::get('{id}/avatar', 'UserController@getAvatar')
-            ->where('id', '^[a-z0-9]{24}$');
+            // GET /user/{id}/avatar
+            Route::get('{id}/avatar', 'UserController@getAvatar')
+                ->where('id', '^[a-z0-9]{24}$');
 
-        // POST /user/{id}/avatar
-        Route::post('{id}/avatar', 'UserController@postAvatar')
-            ->where('id', '^[a-z0-9]{24}$');
+            // POST /user/{id}/avatar
+            Route::post('{id}/avatar', 'UserController@postAvatar')
+                ->where('id', '^[a-z0-9]{24}$');
 
-        // DELETE /user/{id}/avatar
-        Route::delete('{id}/avatar', 'UserController@deleteAvatar')
-            ->where('id', '^[a-z0-9]{24}$');
+            // DELETE /user/{id}/avatar
+            Route::delete('{id}/avatar', 'UserController@deleteAvatar')
+                ->where('id', '^[a-z0-9]{24}$');
 
-        // POST /user/{id}/avatar/crop
-        Route::post('{id}/avatar/crop', 'UserController@cropAvatar')
-            ->where('id', '^[a-z0-9]{24}$');
+            // POST /user/{id}/avatar/crop
+            Route::post('{id}/avatar/crop', 'UserController@cropAvatar')
+                ->where('id', '^[a-z0-9]{24}$');
+
+            // POST /user/logout
+            Route::post('logout', 'UserController@postLogout');
+
+        });
 
         // POST /user/login
         Route::post('login', 'UserController@postLogin');
 
-        // POST /user/logout
-        Route::post('logout', 'UserController@postLogout');
+        // POST /user/activate/{activation_token}
+        Route::post('activate/{activation_token}', 'UserController@postActivate');
+
     });
 });
 

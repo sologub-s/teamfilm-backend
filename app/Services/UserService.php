@@ -449,11 +449,16 @@ class UserService extends AbstractService
     }
 
     /**
-     * @param String|null $access_token
+     * @param String|null $accessToken
+     * @param bool $notExpired
      * @return User|null
      */
-    public static function getUserByAccessToken (String $accessToken = null) {
-        return User::fetchOne(['access_tokens' => ['$elemMatch' => ['access_token' => $accessToken]]]);
+    public static function getUserByAccessToken (String $accessToken = null, $notExpired = false) {
+        return User::fetchOne([
+            'access_tokens' => [
+                '$elemMatch' => $notExpired ? ['access_token' => $accessToken,'access_token_expire_at' => ['$gt' => time()]] : ['access_token' => $accessToken,],
+            ],
+        ]);
     }
 
     /**

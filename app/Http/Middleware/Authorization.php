@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Response as Response;
+use App\Services\UserService;
 
 class Authorization
 {
@@ -17,10 +18,9 @@ class Authorization
      */
     public function handle($request, Closure $next)
     {
-        if ($request->route()->parameter('id', 0) == 0) {
-            return response()->json([
-                'error' => Response::$statusTexts[Response::HTTP_FORBIDDEN],
-            ])->setStatusCode(Response::HTTP_FORBIDDEN, Response::$statusTexts[Response::HTTP_FORBIDDEN]);
+
+        if(!($xAuth = $request->header('X-Auth', null)) || !UserService::getUserByAccessToken($xAuth, true)){
+            throw new \App\Components\Api\Exception('Not authorized', 403);
         }
 
         return $next($request);
