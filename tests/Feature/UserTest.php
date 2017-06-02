@@ -40,7 +40,7 @@ class UserTest extends TestCase
      * @param String $path
      * @return array
      */
-    protected function uploadFile(String $url, String $path) {
+    protected function uploadFile(String $url, String $path, String $access_token) {
 
         // initialise the curl request
         $request = curl_init($url);
@@ -48,6 +48,7 @@ class UserTest extends TestCase
         // send a file
         curl_setopt($request, CURLOPT_POST, true);
         curl_setopt($request, CURLOPT_HEADER, true);
+        curl_setopt($request, CURLOPT_HTTPHEADER, ['X-Auth: '.$access_token,]);
         curl_setopt($request, CURLOPT_POSTFIELDS, [
             'avatar[]' => new \CURLFile($path),
         ]);
@@ -98,8 +99,8 @@ class UserTest extends TestCase
      * @param $userId
      * @return mixed
      */
-    protected function getUser($userId) {
-        $response = $this->json('GET', 'v1/user/'.$userId);
+    protected function getUser($userId, $access_token) {
+        $response = $this->json('GET', 'v1/user/'.$userId, [], ['X-Auth'=>$access_token]);
         return json_decode($response->getContent(), true)['user'];
     }
 
@@ -155,92 +156,15 @@ class UserTest extends TestCase
             return $mail->hasTo('zeitgeist1988@gmail.com') && false !== stristr($mail->render(), env('APP_URL').'/user/activate/'.$data['activation_token']);
         });
 
-        return $data['id'];
+        return $data;
 
-    }
-
-    /**
-     * @depends testUserCreation
-     */
-    public function testGetUserById($userId) {
-        $response = $this->json('GET', 'v1/user/'.$userId);
-        $response
-            ->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $userId,
-            ])
-        ;
-    }
-
-    /**
-     * Trying brutally activate User should be impossible
-     * @depends testUserCreation
-     * @return void
-     */
-    public function testUserNotActivatingBrutally($userId)
-    {
-        $response = $this->json('PATCH', 'v1/user/'.$userId, ['user' => [
-            'is_active' => true,
-        ]]);
-        $response
-            ->assertStatus(200)
-            ->assertJsonFragment([
-                'is_active' => false,
-            ])
-        ;
-    }
-
-    /**
-     * @param $userId
-     * @depends testUserCreation
-     * @return void
-     */
-    public function testGetUserByNotId($userId) {
-        $user = $this->getUser($userId);
-
-        $responseByEmail = $this->json('GET', 'v1/user/by/email/'.$user['email']);
-        $responseByEmail
-            ->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $user['id'],
-                'email' => $user['email'],
-            ])
-        ;
-
-        $responseByNonExistingEmail = $this->json('GET', 'v1/user/by/email/'.'nonexistingemail@example.com');
-        $responseByNonExistingEmail->assertStatus(404);
-
-        $responseByNickname = $this->json('GET', 'v1/user/by/nickname/'.$user['nickname']);
-        $responseByNickname
-            ->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $user['id'],
-                'nickname' => $user['nickname'],
-            ])
-        ;
-
-        $responseByNonExistingNickname = $this->json('GET', 'v1/user/by/nickname/'.'Non Existing-Nick_Name111');
-        $responseByNonExistingNickname->assertStatus(404);
-
-        $responseByActivationToken = $this->json('GET', 'v1/user/by/activation_token/'.$user['activation_token']);
-        $responseByActivationToken
-            ->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $user['id'],
-                'activation_token' => $user['activation_token'],
-            ])
-        ;
-
-        $responseByNonExistingActivationToken = $this->json('GET', 'v1/user/by/activation_token/'.uniqid());
-        $responseByNonExistingActivationToken->assertStatus(404);
     }
 
     /**
      * @param $userId
      * @depends testUserCreation
      */
-    public function testUserActivation($userId) {
-        $user = $this->getUser($userId);
+    public function testUserActivation($user) {
         $beforeTimestamp = time();
         $response = $this->json('POST', 'v1/user/activate/'.$user['activation_token']);
         $afterTimestamp = time();
@@ -257,17 +181,100 @@ class UserTest extends TestCase
     }
 
     /**
-     * @param $userId
      * @depends testUserCreation
      */
-    public function testUserAvatar($userId) {
+    public function testUserLogin($user)
+    {
+        $userJson = file_get_contents(dirname(__FILE__).'/UserTest/user.json');
+        $userJsonDecoded = json_decode($userJson, true)['user'];
+        $response = $this->json('POST', 'v1/user/login', ['login' => [
+            'email' => $userJsonDecoded['email'],
+            'password' => $userJsonDecoded['password'],
+            'access_token_expire_at' => 9999999999,
+        ],]);
+        $response
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'access_token_expire_at' => 9999999999,
+            ])
+        ;
+        $responseDecoded = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey('login', $responseDecoded);
+        $this->assertArrayHasKey('access_token', $responseDecoded['login']);
+        $this->assertArrayHasKey('access_token_last_used', $responseDecoded['login']);
+
+        return ['user' => $user, 'access_token' => $responseDecoded['login']['access_token']];
+    }
+
+    /**
+     * @depends testUserLogin
+     */
+    public function testGetUserById($creds) {
+        $response = $this->json('GET', 'v1/user/'.$creds['user']['id'], [], ['X-Auth'=>$creds['access_token']]);
+        $response
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $creds['user']['id'],
+            ])
+        ;
+    }
+
+    /**
+     * @param $userId
+     * @depends testUserLogin
+     * @return void
+     */
+    public function testGetUserByNotId($creds) {
+
+        $responseByEmail = $this->json('GET', 'v1/user/by/email/'.$creds['user']['email'],[],['X-Auth'=>$creds['access_token']]);
+        $responseByEmail
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $creds['user']['id'],
+                'email' => $creds['user']['email'],
+            ])
+        ;
+
+        $responseByNonExistingEmail = $this->json('GET', 'v1/user/by/email/'.'nonexistingemail@example.com',[],['X-Auth'=>$creds['access_token']]);
+        $responseByNonExistingEmail->assertStatus(404);
+
+        $responseByNickname = $this->json('GET', 'v1/user/by/nickname/'.$creds['user']['nickname'],[],['X-Auth'=>$creds['access_token']]);
+        $responseByNickname
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $creds['user']['id'],
+                'nickname' => $creds['user']['nickname'],
+            ])
+        ;
+
+        $responseByNonExistingNickname = $this->json('GET', 'v1/user/by/nickname/'.'Non Existing-Nick_Name111',[],['X-Auth'=>$creds['access_token']]);
+        $responseByNonExistingNickname->assertStatus(404);
+
+        $responseByActivationToken = $this->json('GET', 'v1/user/by/activation_token/'.$creds['user']['activation_token'],[],['X-Auth'=>$creds['access_token']]);
+        $responseByActivationToken
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $creds['user']['id'],
+                'activation_token' => $creds['user']['activation_token'],
+            ])
+        ;
+
+        $responseByNonExistingActivationToken = $this->json('GET', 'v1/user/by/activation_token/'.uniqid(),[],['X-Auth'=>$creds['access_token']]);
+        $responseByNonExistingActivationToken->assertStatus(404);
+    }
+
+    /**
+     * @param $userId
+     * @depends testUserLogin
+     */
+    public function testUserAvatar($creds) {
         $file = dirname(__FILE__).'/UserTest/terminator.jpg';
-        $result = $this->uploadFile(env('APP_URL').'/v1/user/'.$userId.'/avatar'.'?testing', $file);
+        $result = $this->uploadFile(env('APP_URL').'/v1/user/'.$creds['user']['id'].'/avatar'.'?testing', $file, $creds['access_token']);
         $this->assertEquals($result['code'], 200);
         $avatarJson = json_decode($result['content'], true);
         $this->assertArrayHasKey('avatar', $avatarJson);
 
-        $avatarResponse = $this->json('GET', 'v1/user/'.$userId.'/avatar')->assertStatus(200);
+        $avatarResponse = $this->json('GET', 'v1/user/'.$creds['user']['id'].'/avatar',[],['X-Auth'=>$creds['access_token']])->assertStatus(200);
         $avatarContent = $avatarResponse->getContent();
         $avatar = json_decode($avatarContent, true);
         $this->assertTrue(is_array($avatar['avatar']));
@@ -293,7 +300,7 @@ class UserTest extends TestCase
             'w' => 400,
             'h' => 300,
         ];
-        $cropResponse = $this->json('POST', 'v1/user/'.$userId.'/avatar/crop', ['crop' => $cropParams,]);
+        $cropResponse = $this->json('POST', 'v1/user/'.$creds['user']['id'].'/avatar/crop', ['crop' => $cropParams,],['X-Auth'=>$creds['access_token']]);
         $cropResponse->assertStatus(200);
         $cropContent = $cropResponse->getContent();
         $crop = json_decode($cropContent, true);
@@ -310,15 +317,15 @@ class UserTest extends TestCase
         $this->assertEquals($cropImagick->getImageWidth(), $cropParams['w']);
         $this->assertEquals($cropImagick->getImageHeight(), $cropParams['h']);
 
-        $user = $this->getUser($userId);
+        $user = $this->getUser($creds['user']['id'], $creds['access_token']);
         $this->assertTrue(is_array($user['avatar_cropped']));
         $this->assertEquals($user['avatar_cropped']['identity'], $crop['avatar']['identity']);
 
         $this->assertTrue($this->is_url_exist((config('services.storage.url') . $avatar['avatar']['url'])));
         $this->assertTrue($this->is_url_exist((config('services.storage.url') . $crop['avatar']['url'])));
 
-        $this->json('DELETE', 'v1/user/'.$userId.'/avatar')->assertStatus(200);
-        $user = $this->getUser($userId);
+        $this->json('DELETE', 'v1/user/'.$creds['user']['id'].'/avatar',[],['X-Auth'=>$creds['access_token']])->assertStatus(200);
+        $user = $this->getUser($creds['user']['id'], $creds['access_token']);
         $this->assertNull($user['avatar']);
         $this->assertNull($user['avatar_cropped']);
         $this->assertFalse($this->is_url_exist((config('services.storage.url') . $avatar['avatar']['url'])));

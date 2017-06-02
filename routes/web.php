@@ -15,10 +15,27 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('swagger', 'SwaggerController@index');
+Route::get('swagger.json', 'SwaggerController@index');
 
 /**
- * API V1
+ * @SWG\Swagger(
+ *   schemes={"http"},
+ *   host="api.teamfilm.dev",
+ *   basePath="/v1"
+ * )
+ */
+
+/**
+ * @SWG\SecurityScheme(
+ *   securityDefinition="X-Auth",
+ *   type="apiKey",
+ *   in="header",
+ *   name="X-Auth"
+ * )
+ */
+
+/**
+ * @SWG\Info(title="TeamFilm API", version="0.1")
  */
 Route::group(['prefix' => 'v1'], function () {
 
@@ -32,9 +49,6 @@ Route::group(['prefix' => 'v1'], function () {
 
             // GET /user/by/{field}/{value}
             Route::get('by/{field}/{value}', 'UserController@getByField');
-
-            // POST /user
-            Route::post('', 'UserController@post');
 
             // PATCH /user/{id}
             Route::patch('{id}', 'UserController@patch')
@@ -57,7 +71,7 @@ Route::group(['prefix' => 'v1'], function () {
                 ->where('id', '^[a-z0-9]{24}$');
 
             // POST /user/{id}/avatar/crop
-            Route::post('{id}/avatar/crop', 'UserController@cropAvatar')
+            Route::post('{id}/avatar/crop', 'UserController@postCrop')
                 ->where('id', '^[a-z0-9]{24}$');
 
             // POST /user/logout
@@ -67,6 +81,9 @@ Route::group(['prefix' => 'v1'], function () {
 
         // POST /user/login
         Route::post('login', 'UserController@postLogin');
+
+        // POST /user
+        Route::post('', 'UserController@post');
 
         // POST /user/activate/{activation_token}
         Route::post('activate/{activation_token}', 'UserController@postActivate');

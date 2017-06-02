@@ -241,6 +241,10 @@ class UserService extends AbstractService
             throw new \App\Exceptions\InvalidEntityException('Avatar data is not valid');
         }
 
+        $avatarImagick = new \Imagick((config('services.storage.url') . $avatar['url']));
+        $avatar['width'] = $avatarImagick->getImageWidth();
+        $avatar['height'] = $avatarImagick->getImageHeight();
+
         $user->avatar = $avatar;
         try {
             $user->save();
@@ -358,11 +362,11 @@ class UserService extends AbstractService
         }
 
         if (!$user->is_active) {
-            return false;
+            throw new Exception('', 403);
         }
 
         if(!password_verify($password, $user->password)) {
-            return false;
+            throw new Exception('', 403);
         }
 
         $accessTokens = $user->access_tokens;
