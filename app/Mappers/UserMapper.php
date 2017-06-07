@@ -18,16 +18,9 @@ class UserMapper extends \MongoStar\Map
     {
         return [
             'id' => 'id',
-            'email' => 'email',
-            'created_at' => 'created_at',
-            'updated_at' => 'updated_at',
-            'activated_at' => 'activated_at',
-            'is_active' => 'is_active',
-            'activation_token' => 'activation_token',
             'name' => 'name',
             'surname' => 'surname',
             'nickname' => 'nickname',
-            'cellphone' => 'cellphone',
             'sex' => 'sex',
             'birthday' => 'birthday',
             'country' => 'country',
@@ -46,6 +39,19 @@ class UserMapper extends \MongoStar\Map
             'avatar' => 'avatar',
             'avatar_cropped' => 'avatar_cropped',
         ];
+    }
+
+    public function api_extended () : array
+    {
+        return array_merge($this->api(), [
+            'email' => 'email',
+            'cellphone' => 'cellphone',
+            'created_at' => 'created_at',
+            'updated_at' => 'updated_at',
+            'activated_at' => 'activated_at',
+            'is_active' => 'is_active',
+            'activation_token' => 'activation_token',
+        ]);
     }
 
     public function service()

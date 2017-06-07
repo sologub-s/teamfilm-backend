@@ -332,6 +332,85 @@ class UserTest extends TestCase
         $this->assertFalse($this->is_url_exist((config('services.storage.url') . $crop['avatar']['url'])));
     }
 
+    public function testUserRestrictions () {
 
+        self::sanitizeDb();
+
+        Mail::fake();
+
+        $userJsonDecoded1 = (array) json_decode(file_get_contents(dirname(__FILE__).'/UserTest/user.json'), true);
+        $userJsonDecoded2 = array_replace_recursive($userJsonDecoded1, ['user' => [
+            'email' => 'bob_marlie@teamfilm.dev',
+            'nickname' => 'Bob_Marlie',
+            'name' => 'Bob',
+            'surname' => 'Marlie',
+        ]]);
+
+        $response = $this->json('POST', 'v1/user', $userJsonDecoded1);
+        $response->assertStatus(200);
+        $userData1 = json_decode($response->getContent(), true)['user'];
+        $response = $this->json('POST', 'v1/user/activate/'.$userData1['activation_token']);
+        $response->assertStatus(200)->assertJsonFragment(['is_active' => true,]);
+        $response = $this->json('POST', 'v1/user/login', ['login' => [
+            'email' => $userJsonDecoded1['user']['email'],
+            'password' => $userJsonDecoded1['user']['password'],
+            'access_token_expire_at' => 9999999999,
+        ],]);
+        $response->assertStatus(200);
+        $accessToken1 = json_decode($response->getContent(), true)['login']['access_token'];
+
+        $response = $this->json('POST', 'v1/user', $userJsonDecoded2);
+        $response->assertStatus(200);
+        $userData2 = json_decode($response->getContent(), true)['user'];
+        $response = $this->json('POST', 'v1/user/activate/'.$userData2['activation_token']);
+        $response->assertStatus(200)->assertJsonFragment(['is_active' => true,]);
+        $response = $this->json('POST', 'v1/user/login', ['login' => [
+            'email' => $userJsonDecoded2['user']['email'],
+            'password' => $userJsonDecoded2['user']['password'],
+            'access_token_expire_at' => 9999999999,
+        ],]);
+        $response->assertStatus(200);
+        $accessToken2 = json_decode($response->getContent(), true)['login']['access_token'];
+
+        $response = $this->json('GET', 'v1/user/'.$userData1['id'], [], ['X-Auth'=>$accessToken1]);
+        $response
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $userData1['id'],
+                'email' => $userData1['email'],
+                'nickname' => $userData1['nickname'],
+                'cellphone' => $userData1['cellphone'],
+            ])
+        ;
+
+        $response = $this->json('GET', 'v1/user/'.$userData1['id'], [], ['X-Auth'=>$accessToken2]);
+        $response
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $userData1['id'],
+                'nickname' => $userData1['nickname'],
+            ])
+        ;
+        $responseDecoded = json_decode($response->getContent(), true)['user'];
+        foreach (['email','cellphone','created_at','updated_at','activated_at','is_active','activation_token'] as $key) {
+            $this->assertArrayNotHasKey($key, $responseDecoded);
+        }
+
+        $response = $this->json('patch', 'v1/user/'.$userData1['id'], ['user'=>['nickname'=>'Change Me']], ['X-Auth'=>$accessToken2]);
+        $response->assertStatus(403);
+
+        $response = $this->json('delete', 'v1/user/'.$userData1['id'], [], ['X-Auth'=>$accessToken2]);
+        $response->assertStatus(403);
+
+        $response = $this->json('post', 'v1/user/'.$userData1['id'].'/avatar', [], ['X-Auth'=>$accessToken2]);
+        $response->assertStatus(403);
+
+        $response = $this->json('delete', 'v1/user/'.$userData1['id'].'/avatar', [], ['X-Auth'=>$accessToken2]);
+        $response->assertStatus(403);
+
+        $response = $this->json('post', 'v1/user/'.$userData1['id'].'/avatar/crop', [], ['X-Auth'=>$accessToken2]);
+        $response->assertStatus(403);
+
+    }
 
 }

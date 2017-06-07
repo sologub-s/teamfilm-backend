@@ -7,6 +7,7 @@ use Illuminate\Http\Request as Request;
 use Illuminate\Http\Response as Response;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Persistence\ManagerRegistry;
+use App\Services\UserService;
 
 abstract class JsonController extends BaseController
 {
@@ -49,5 +50,9 @@ abstract class JsonController extends BaseController
 
     protected function getJsonParam (String $paramName = null) {
         return request()->json($paramName, null);
+    }
+
+    protected function getUser () {
+        return request()->header('X-Auth', null) ? UserService::getUserByAccessToken(request()->header('X-Auth'), true) : null;
     }
 }

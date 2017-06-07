@@ -44,7 +44,7 @@ class UserController extends JsonController
     {
 
         return $this->response([
-            'user' => UserMapper::execute(UserService::get($id), 'api')->toArray(),
+            'user' => UserMapper::execute(UserService::get($id), $this->getUser()->id == $id ? 'api_extended' : 'api')->toArray(),
         ]);
 
     }
@@ -92,7 +92,7 @@ class UserController extends JsonController
     {
 
         return $this->response([
-            'user' => UserMapper::execute(UserService::getByField($field, $value), 'api')->toArray(),
+            'user' => UserMapper::execute($foundUser = UserService::getByField($field, $value), $this->getUser()->id == $foundUser->id ? 'api_extended' : 'api')->toArray(),
         ]);
 
     }
@@ -130,7 +130,7 @@ class UserController extends JsonController
     public function post ()
     {
         return $this->response([
-            'user' => UserMapper::execute(UserService::register(new \App\Models\User($this->getJsonParam('user'))), 'api')->toArray()
+            'user' => UserMapper::execute(UserService::register(new \App\Models\User($this->getJsonParam('user'))), 'api_extended')->toArray()
         ]);
     }
 
@@ -168,6 +168,9 @@ class UserController extends JsonController
      */
     public function patch(String $id)
     {
+        if ($this->getUser()->id != $id) {
+            throw new \App\Components\Api\Exception('', 403);
+        }
         return $this->response([
             'user' => UserMapper::execute(UserService::update($id, $this->getJsonParam('user')), 'api')->toArray(),
         ]);
@@ -200,6 +203,9 @@ class UserController extends JsonController
      */
     public function delete(String $id)
     {
+        if ($this->getUser()->id != $id) {
+            throw new \App\Components\Api\Exception('', 403);
+        }
         UserService::delete($id);
         return $this->response();
     }
@@ -236,7 +242,7 @@ class UserController extends JsonController
      */
     public function postActivate (String $activation_token) {
         return $this->response([
-            'user' => UserMapper::execute(UserService::activateByToken($activation_token), 'api')->toArray(),
+            'user' => UserMapper::execute(UserService::activateByToken($activation_token), 'api_extended')->toArray(),
         ]);
     }
 
@@ -273,7 +279,6 @@ class UserController extends JsonController
      */
     public function getAvatar(String $id)
     {
-
         return $this->response([
             'avatar' => UserMapper::execute(UserService::get($id), 'api')->toArray()['avatar']
         ]);
@@ -312,6 +317,9 @@ class UserController extends JsonController
      *
      */
     public function postAvatar (String $id) {
+        if ($this->getUser()->id != $id) {
+            throw new \App\Components\Api\Exception('', 403);
+        }
         return $this->response([
             'avatar' => UserService::setAvatar($id)
         ]);
@@ -343,6 +351,9 @@ class UserController extends JsonController
      *
      */
     public function deleteAvatar (String $id) {
+        if ($this->getUser()->id != $id) {
+            throw new \App\Components\Api\Exception('', 403);
+        }
         UserService::deleteAvatar($id);
         return $this->response();
     }
@@ -381,6 +392,9 @@ class UserController extends JsonController
      *
      */
     public function postCrop (String $id) {
+        if ($this->getUser()->id != $id) {
+            throw new \App\Components\Api\Exception('', 403);
+        }
         return $this->response([
             'avatar' => UserService::cropAvatar($id, (int) $this->getJsonParam('crop.x'), (int) $this->getJsonParam('crop.y'), (int) $this->getJsonParam('crop.w'), (int) $this->getJsonParam('crop.h'))
         ]);
