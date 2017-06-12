@@ -52,6 +52,20 @@
      *     description="Criteria compatible filter i.e. 'filter[user_id]=591f2171ea6406591715f662&filter[genres]=__in__porn,cartoons&filter[genres]=__nin__horror'",
      *     required=false
      *   ),
+     *   @SWG\Parameter(
+     *     name="page",
+     *     type="integer",
+     *     in="path",
+     *     description="Criteria compatible page number i.e. '2', default: 1",
+     *     required=false
+     *   ),
+     *   @SWG\Parameter(
+     *     name="limit",
+     *     type="integer",
+     *     in="path",
+     *     description="Criteria compatible limit amount i.e. '10', default: 20",
+     *     required=false
+     *   ),
      *   @SWG\Response (
      *     response=200,
      *     description="Success response",
@@ -59,7 +73,12 @@
      *       type="array",
      *       @SWG\Property(
      *         property="project",
-     *         ref="#/definitions/Project"
+     *         type="array",
+     *         items=@SWG\Schema (ref="#/definitions/Project")
+     *       ),
+     *       @SWG\Property(
+     *         property="criteria",
+     *         ref="#/definitions/Criteria"
      *       ),
      *     )
      *   )
