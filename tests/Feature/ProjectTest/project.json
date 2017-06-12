@@ -1,0 +1,16 @@
+{
+  "project": {
+    "user_id": "591f2171ea6406591715f662",
+    "title": "My first project",
+    "description": "This is test project. Hello world from test project !",
+    "type": "movie",
+    "genres": ["horror", "porn"],
+    "genres_custom": "arthouse",
+    "start_date": 1496939434,
+    "deadline_date": 1502199018,
+    "duration": 30,
+    "country": "583f35399bb2f9300fd1effe",
+    "city": "583f355a9bb2f9300fd1efff",
+    "place": "46.399543,30.732595"
+  }
+}

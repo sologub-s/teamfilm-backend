@@ -230,7 +230,7 @@
      *     description="Success response",
      *     @SWG\Schema (
      *       @SWG\Property(
-     *         property="user",
+     *         property="avatar",
      *         ref="#/definitions/Avatar"
      *       ),
      *     )

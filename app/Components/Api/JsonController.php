@@ -55,4 +55,17 @@ abstract class JsonController extends BaseController
     protected function getUser () {
         return request()->header('X-Auth', null) ? UserService::getUserByAccessToken(request()->header('X-Auth'), true) : null;
     }
+
+    /**
+     * @return Criteria
+     */
+    protected function getCriteria() {
+        $params = request()->only(['order_by','filter','page','limit',]);
+        $criteria = new \App\Components\Api\Criteria();
+        $criteria->setOrderBy($params['order_by']);
+        $criteria->setFilter($params['filter']);
+        $criteria->setPage($params['page']);
+        $criteria->setLimit($params['limit']);
+        return $criteria;
+    }
 }

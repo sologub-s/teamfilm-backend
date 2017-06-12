@@ -89,14 +89,38 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('activate/{activation_token}', 'UserController@postActivate');
 
     });
-});
 
-/**
- * Misc
- */
+    Route::group(['prefix' => 'project', 'middleware' => 'authorization'], function () {
 
-Route::group(['middleware' => 'authorization'], function () {
+        // GET /project/{id}
+        Route::get('{id}', 'ProjectController@get')
+            ->where('id', '^[a-z0-9]{24}$');
 
+        // GET /project/list
+        Route::get('list', 'ProjectController@getList');
 
+        // POST /project
+        Route::post('', 'ProjectController@post');
 
+        // PATCH /project/{id}
+        Route::patch('{id}', 'ProjectController@patch')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // DELETE /project/{id}
+        Route::delete('{id}', 'ProjectController@delete')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // GET /project/{id}/logo
+        Route::get('{id}/logo', 'ProjectController@getLogo')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // POST /project/{id}/logo
+        Route::post('{id}/logo', 'ProjectController@postLogo')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // DELETE /project/{id}/logo
+        Route::delete('{id}/logo', 'ProjectController@deleteLogo')
+            ->where('id', '^[a-z0-9]{24}$');
+
+    });
 });

@@ -66,7 +66,7 @@ class Handler extends ExceptionHandler
 
         if (env('APP_CUSTOM_ERRORS') && $exception instanceof NotFoundHttpException) {
             return response()->json([
-                'error' => 'Route not found',
+                'error' => $exception->getMessage() ?: 'Route not found',
                 'code' => 404,
             ], 404);
         }
