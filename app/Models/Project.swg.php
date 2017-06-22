@@ -88,14 +88,123 @@
  * @SWG\Property(
  *     property="place",
  *     type="string",
- *     example="34.75,23.12"
+ *     example="new interesting genre name"
+ * ),
+ *
+ *
+ *
+ *
+
+ * @SWG\Property(
+ *     property="activated_at",
+ *     readOnly="true",
+ *     type="integer|null",
+ *     example="1495471353"
  * ),
  * @SWG\Property(
- *     property="status",
+ *     property="is_active",
+ *     type="boolean",
+ *     readOnly="true",
+ *     example="true"
+ * ),
+ * @SWG\Property(
+ *     property="activation_token",
+ *     type="string",
+ *     readOnly="true",
+ *     example="591f21713be4e"
+ * ),
+ * @SWG\Property(
+ *     property="name",
+ *     type="string|required",
+ *     example="Serhii"
+ * ),
+ * @SWG\Property(
+ *     property="surname",
+ *     type="string|required",
+ *     example="Solohub"
+ * ),
+ * @SWG\Property(
+ *     property="nickname",
+ *     type="string|null",
+ *     example="ZeitGeist"
+ * ),
+ * @SWG\Property(
+ *     property="cellphone",
+ *     type="string|null",
+ *     example="+380938923508"
+ * ),
+ * @SWG\Property(
+ *     property="sex",
+ *     type="string|null",
+ *     example="m",
+ *     example="w"
+ * ),
+ * @SWG\Property(
+ *     property="birthday",
+ *     type="integer|null",
+ *     example="576842464"
+ * ),
+
+ * @SWG\Property(
+ *     property="company",
+ *     type="string|null",
+ *     example="TeamFilm"
+ * ),
+ * @SWG\Property(
+ *     property="positions",
  *     type="array",
  *     @SWG\Items(type="string"),
- *     example="on_hold, in_progress, done"
- * )
+ *     example="[ceo, hr, artist, singer, dancer, director, cto]"
+ * ),
+ * @SWG\Property(
+ *     property="about",
+ *     type="string|null",
+ *     example="I, me and myself"
+ * ),
+ * @SWG\Property(
+ *     property="awards",
+ *     type="string|null",
+ *     example="Golden Axe"
+ * ),
+ * @SWG\Property(
+ *     property="portfolio",
+ *     type="string|null",
+ *     example="A lot of work has been done"
+ * ),
+ * @SWG\Property(
+ *     property="hasForeignPassport",
+ *     type="boolean|null",
+ *     example="false"
+ * ),
+ * @SWG\Property(
+ *     property="weight",
+ *     type="integer|null",
+ *     example="140"
+ * ),
+ * @SWG\Property(
+ *     property="growth",
+ *     type="integer|null",
+ *     example="182"
+ * ),
+ * @SWG\Property(
+ *     property="eyes",
+ *     type="array",
+ *     @SWG\Items(type="string"),
+ *     example="[red, green, blue, brown, grey]"
+ * ),
+ * @SWG\Property(
+ *     property="vocal",
+ *     type="array",
+ *     @SWG\Items(type="string"),
+ *     example="[alt, soprano, bass]"
+ * ),
+ * @SWG\Property(
+ *     property="dance",
+ *     type="array",
+ *     @SWG\Items(type="string"),
+ *     example="[hip-hop, strip, balley, disco, rumba, chachacha]"
+ * ),
+
  * )
  */
 

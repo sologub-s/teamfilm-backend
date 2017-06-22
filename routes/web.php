@@ -123,4 +123,27 @@ Route::group(['prefix' => 'v1'], function () {
             ->where('id', '^[a-z0-9]{24}$');
 
     });
+
+    Route::group(['prefix' => 'position', 'middleware' => 'authorization'], function () {
+
+        // GET /position/{id}
+        Route::get('{id}', 'PositionController@get')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // GET /position/list
+        Route::get('list', 'PositionController@getList');
+
+        // POST /position
+        Route::post('', 'PositionController@post');
+
+        // PATCH /position/{id}
+        Route::patch('{id}', 'PositionController@patch')
+            ->where('id', '^[a-z0-9]{24}$');
+
+        // DELETE /position/{id}
+        Route::delete('{id}', 'PositionController@delete')
+            ->where('id', '^[a-z0-9]{24}$');
+
+    });
+
 });
